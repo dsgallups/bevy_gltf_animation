@@ -1,5 +1,8 @@
 # Easy animations for GLTF files
 
+[<img alt="github" src="https://img.shields.io/badge/github-dsgallups/bevy_gltf_animation?style=for-the-badge&labelColor=555555&logo=github" height="20">](https://github.com/dsgallups/bevy_gltf_animation)
+[<img alt="crates.io" src="https://img.shields.io/crates/v/bevy_gltf_animation.svg?style=for-the-badge&color=fc8d62&logo=rust" height="20">](https://crates.io/crates/bevy_gltf_animation)
+
 ## Purpose
 GLTF files include animations in their files. Importing them into bevy can be tedious, especially if you don't plan to blend any animations.
 
