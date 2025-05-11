@@ -51,9 +51,6 @@ fn play_animations(
 
     for mut animation_player in humans {
         animation_player.play(*index);
-
-        //animation_player.play(*index);
-        //todo
     }
     *index += 1;
 }

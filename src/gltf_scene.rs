@@ -1,19 +1,10 @@
-use std::{collections::HashSet, iter};
-
-use bevy::{platform::collections::HashMap, prelude::*, scene::SceneInstanceReady};
-
-pub fn plugin(app: &mut App) {
-    app.register_type::<AnimationPlayerOf>();
-    app.register_type::<AnimationPlayers>();
-    app.add_systems(PreUpdate, load_scene)
-        .add_systems(PostUpdate, play_requested_animations);
-}
+use bevy::{platform::collections::HashMap, prelude::*};
 
 #[derive(Component)]
 pub struct GltfSceneRoot {
-    handle: Handle<Gltf>,
+    pub handle: Handle<Gltf>,
     /// Which scene to display
-    use_scene: usize,
+    pub use_scene: usize,
 }
 
 impl GltfSceneRoot {
@@ -28,20 +19,18 @@ impl GltfSceneRoot {
         self
     }
 }
-#[derive(Component)]
-struct IsSetup;
 
 #[derive(Component)]
 pub struct GltfAnimations {
     numbers: HashMap<usize, AnimationNodeIndex>,
     names: HashMap<String, AnimationNodeIndex>,
     // used in a post update system and then cleared
-    animation_to_play: Option<AnimationNodeIndex>,
-    animation_player: Entity,
+    pub(crate) animation_to_play: Option<AnimationNodeIndex>,
+    pub animation_player: Entity,
 }
 
 impl GltfAnimations {
-    fn new(gltf: &Gltf, animation_player: Entity) -> (Self, AnimationGraph) {
+    pub(crate) fn new(gltf: &Gltf, animation_player: Entity) -> (Self, AnimationGraph) {
         let mut map = HashMap::new();
 
         //we're going to reverse this
@@ -141,114 +130,5 @@ impl<'a> From<&'a str> for GltfAnimationIndexQuery<'a> {
 impl From<usize> for GltfAnimationIndexQuery<'_> {
     fn from(value: usize) -> Self {
         Self::Number(value)
-    }
-}
-
-fn load_scene(
-    mut commands: Commands,
-    gltf_scenes: Query<(Entity, &GltfSceneRoot), Without<IsSetup>>,
-    gltfs: Res<Assets<Gltf>>,
-) {
-    for (entity, scene) in gltf_scenes {
-        let Some(gltf) = gltfs.get(&scene.handle) else {
-            continue;
-        };
-
-        let Some(gltf_scene_handle) = gltf.scenes.get(scene.use_scene) else {
-            error!(
-                "Gltf does not have scene {}! Aborting setup.",
-                scene.use_scene
-            );
-            commands.entity(entity).insert(IsSetup);
-            continue;
-        };
-        info!("added scene root");
-        commands
-            .entity(entity)
-            .insert((
-                SceneRoot(gltf_scene_handle.clone()),
-                AnimationPlayerAncestor,
-                IsSetup,
-            ))
-            .observe(setup_animations);
-    }
-}
-
-/// Entities with this component will receive an [`AnimationPlayers`] relationship so that they can easily find the animation player of their model.
-#[derive(Component)]
-pub(crate) struct AnimationPlayerAncestor;
-
-/// Simple link to the animation player of a model that is buried deep in the hierarchy.
-#[derive(Component, Reflect, Clone, Deref)]
-#[reflect(Component)]
-#[relationship_target(relationship = AnimationPlayerOf)]
-pub(crate) struct AnimationPlayers(Vec<Entity>);
-
-#[derive(Component, Reflect, Deref)]
-#[reflect(Component)]
-#[relationship(relationship_target = AnimationPlayers)]
-pub(crate) struct AnimationPlayerOf(pub(crate) Entity);
-
-// notes: this doesn't trigger if you don't insert scene root. WHEW.
-/// Bevy likes to hide the [`AnimationPlayer`] component deep in the hierarchy of a model.
-/// This system ensures that we can find the animation player easily by inserting an [`AnimationPlayers`] relationship
-/// into the same entity that contains the [`AnimationPlayerAncestor`] component.
-fn setup_animations(
-    trigger: Trigger<SceneInstanceReady>,
-    mut commands: Commands,
-    parents: Query<&ChildOf>,
-    children: Query<&Children>,
-    animation_players: Query<Entity, With<AnimationPlayer>>,
-    scene_root: Query<(Entity, &GltfSceneRoot)>,
-    gltfs: Res<Assets<Gltf>>,
-    mut graphs: ResMut<Assets<AnimationGraph>>,
-) {
-    info!("lil observer");
-    let target = trigger.target();
-    let Some(animation_player) = children
-        .iter_descendants(target)
-        .find(|child| animation_players.get(*child).is_ok())
-    else {
-        error!("No animation player for scene!");
-        return;
-    };
-
-    let scene_root = iter::once(animation_player)
-        .chain(parents.iter_ancestors(animation_player))
-        .find_map(|entity| scene_root.get(entity).ok());
-    let Some((scene_root, gltf_scene_root)) = scene_root else {
-        info!("No ancestor");
-        return;
-    };
-
-    let Some(gltf) = gltfs.get(&gltf_scene_root.handle) else {
-        error!("Couldn't find GLTF for Scene root!");
-        return;
-    };
-
-    let (animations, graph) = GltfAnimations::new(gltf, animation_player);
-
-    let graph_handle = graphs.add(graph);
-
-    commands
-        .entity(animation_player)
-        .insert(AnimationGraphHandle(graph_handle));
-
-    commands.entity(scene_root).insert(animations);
-}
-
-fn play_requested_animations(
-    mut animations: Query<&mut GltfAnimations>,
-    mut players: Query<&mut AnimationPlayer>,
-) {
-    for mut animation in &mut animations {
-        let Some(index) = animation.animation_to_play.take() else {
-            continue;
-        };
-        info!("Now playing {index:?}");
-        let mut player = players.get_mut(animation.animation_player).unwrap();
-
-        player.stop_all();
-        player.play(index);
     }
 }
