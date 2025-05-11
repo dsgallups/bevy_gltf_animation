@@ -3,6 +3,9 @@ name = "bevy_gltf_animation"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+extended = []
+
 [dependencies]
 bevy = { version = "0.16", default-features = false, features = [
     "bevy_animation",
@@ -14,3 +17,7 @@ bevy = "0.16"
 [lints.clippy]
 type-complexity = "allow"
 too-many-arguments = "allow"
+
+[[example]]
+name = "human"
+required-features = ["extended"]

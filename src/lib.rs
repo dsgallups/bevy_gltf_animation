@@ -12,8 +12,10 @@ pub struct DoNotInsertGltfAnimationPlayer;
 
 impl Plugin for GltfAnimationPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PreUpdate, load_scene)
-            .add_systems(PostUpdate, play_requested_animations);
+        app.add_systems(PreUpdate, load_scene);
+
+        #[cfg(feature = "extended")]
+        app.add_systems(PostUpdate, play_requested_animations);
     }
 }
 
@@ -93,6 +95,7 @@ fn setup_animations(
     commands.entity(scene_root).insert(animations);
 }
 
+#[cfg(feature = "extended")]
 fn play_requested_animations(
     mut animations: Query<&mut GltfAnimations>,
     mut players: Query<&mut AnimationPlayer>,

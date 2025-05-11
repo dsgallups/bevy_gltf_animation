@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use bevy::prelude::*;
 use bevy_gltf_animation::prelude::*;
-/// Requires the extended feature to work. See `basic.rs` to run without the extended feature.
+
 fn main() {
     App::new()
         .add_plugins((DefaultPlugins, GltfAnimationPlugin))
@@ -38,19 +38,30 @@ impl Default for AnimationTimer {
     }
 }
 
+const NAMES: [&str; 4] = ["Hit_Chest", "Walk_Formal_Loop", "Interact", "Sword_Attack"];
+
 fn play_animations(
     mut anim_timer: ResMut<AnimationTimer>,
     time: Res<Time>,
     humans: Query<&mut GltfAnimations, With<Human>>,
     mut index: Local<usize>,
+    mut players: Query<&mut AnimationPlayer>,
 ) {
     anim_timer.0.tick(time.delta());
     if !anim_timer.0.just_finished() {
         return;
     }
-
-    for mut animation_player in humans {
-        animation_player.play(*index);
+    if *index > 3 {
+        *index = 0;
     }
+    let animation_to_play = NAMES[*index];
+
+    for mut gltf_animations in humans {
+        let mut player = players.get_mut(gltf_animations.animation_player).unwrap();
+        let index = gltf_animations.get_by_name(animation_to_play).unwrap();
+        player.stop_all();
+        player.play(index);
+    }
+
     *index += 1;
 }

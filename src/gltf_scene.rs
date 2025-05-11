@@ -20,11 +20,12 @@ impl GltfSceneRoot {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct GltfAnimations {
     numbers: HashMap<usize, AnimationNodeIndex>,
     names: HashMap<String, AnimationNodeIndex>,
     // used in a post update system and then cleared
+    #[cfg(feature = "extended")]
     pub(crate) animation_to_play: Option<AnimationNodeIndex>,
     pub animation_player: Entity,
 }
@@ -60,6 +61,7 @@ impl GltfAnimations {
 
         //idk if this is true
         debug_assert!(map.is_empty());
+
         let mut animation_graph = AnimationGraph::new();
 
         let mut number_map = HashMap::new();
@@ -77,6 +79,7 @@ impl GltfAnimations {
         let animations = Self {
             numbers: number_map,
             names: named_map,
+            #[cfg(feature = "extended")]
             animation_to_play: None,
             animation_player,
         };
@@ -108,6 +111,7 @@ impl GltfAnimations {
 
     /// a simple helper that will allow you to play an animation.
     /// doing this will run in `PostUpdate`
+    #[cfg(feature = "extended")]
     pub fn play<'a>(&mut self, index: impl Into<GltfAnimationIndexQuery<'a>>) {
         let Some(value) = self.get(index) else {
             return;
