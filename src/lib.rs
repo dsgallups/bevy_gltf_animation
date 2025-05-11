@@ -29,10 +29,13 @@ struct IsSetup;
 
 fn load_scene(
     mut commands: Commands,
-    gltf_scenes: Query<(Entity, &GltfSceneRoot), Without<IsSetup>>,
+    gltf_scenes: Query<
+        (Entity, &GltfSceneRoot, Has<DoNotInsertGltfAnimationPlayer>),
+        Without<IsSetup>,
+    >,
     gltfs: Res<Assets<Gltf>>,
 ) {
-    for (entity, scene) in gltf_scenes {
+    for (entity, scene, dont_insert_animation_player) in gltf_scenes {
         let Some(gltf) = gltfs.get(&scene.handle) else {
             continue;
         };
@@ -45,10 +48,12 @@ fn load_scene(
             commands.entity(entity).insert(IsSetup);
             continue;
         };
-        commands
-            .entity(entity)
-            .insert((SceneRoot(gltf_scene_handle.clone()), IsSetup))
-            .observe(setup_animations);
+        let mut entity_commands = commands.entity(entity);
+
+        entity_commands.insert((SceneRoot(gltf_scene_handle.clone()), IsSetup));
+        if !dont_insert_animation_player {
+            entity_commands.observe(setup_animations);
+        }
     }
 }
 
@@ -75,7 +80,7 @@ fn setup_animations(
         .chain(parents.iter_ancestors(animation_player))
         .find_map(|entity| scene_root.get(entity).ok());
     let Some((scene_root, gltf_scene_root)) = scene_root else {
-        info!("No ancestor");
+        error!("No gltf ancestor to attach!");
         return;
     };
 
