@@ -34,14 +34,14 @@ pub struct AnimationTimer(Timer);
 
 impl Default for AnimationTimer {
     fn default() -> Self {
-        Self(Timer::new(Duration::from_secs(3), TimerMode::Repeating))
+        Self(Timer::new(Duration::from_secs(1), TimerMode::Repeating))
     }
 }
 
 fn play_animations(
     mut anim_timer: ResMut<AnimationTimer>,
     time: Res<Time>,
-    humans: Query<&GltfAnimationPlayer, With<Human>>,
+    humans: Query<&mut GltfAnimations, With<Human>>,
     mut index: Local<usize>,
 ) {
     anim_timer.0.tick(time.delta());
@@ -49,7 +49,9 @@ fn play_animations(
         return;
     }
 
-    for animation_player in humans {
+    for mut animation_player in humans {
+        animation_player.play(*index);
+
         //animation_player.play(*index);
         //todo
     }

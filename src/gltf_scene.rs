@@ -5,7 +5,8 @@ use bevy::{platform::collections::HashMap, prelude::*, scene::SceneInstanceReady
 pub fn plugin(app: &mut App) {
     app.register_type::<AnimationPlayerOf>();
     app.register_type::<AnimationPlayers>();
-    app.add_systems(PreUpdate, load_scene);
+    app.add_systems(PreUpdate, load_scene)
+        .add_systems(PostUpdate, play_requested_animations);
 }
 
 #[derive(Component)]
@@ -28,16 +29,19 @@ impl GltfSceneRoot {
     }
 }
 #[derive(Component)]
-pub struct IsSetup;
+struct IsSetup;
 
 #[derive(Component)]
 pub struct GltfAnimations {
     numbers: HashMap<usize, AnimationNodeIndex>,
     names: HashMap<String, AnimationNodeIndex>,
+    // used in a post update system and then cleared
+    animation_to_play: Option<AnimationNodeIndex>,
+    animation_player: Entity,
 }
 
 impl GltfAnimations {
-    fn new(gltf: &Gltf) -> (Self, AnimationGraph) {
+    fn new(gltf: &Gltf, animation_player: Entity) -> (Self, AnimationGraph) {
         let mut map = HashMap::new();
 
         //we're going to reverse this
@@ -84,9 +88,59 @@ impl GltfAnimations {
         let animations = Self {
             numbers: number_map,
             names: named_map,
+            animation_to_play: None,
+            animation_player,
         };
 
         (animations, animation_graph)
+    }
+
+    /// Get an animation by its gltf ID
+    pub fn get_by_number(&mut self, index: usize) -> Option<AnimationNodeIndex> {
+        self.numbers.get(&index).copied()
+    }
+
+    /// Get an animation node index by its gltf name
+    pub fn get_by_name(&mut self, index: &str) -> Option<AnimationNodeIndex> {
+        self.names.get(index).copied()
+    }
+
+    /// Returns the animation node index for the graph. This is better for animations
+    /// that need to be played immediately, or with a transition.
+    pub fn get<'a>(
+        &mut self,
+        index: impl Into<GltfAnimationIndexQuery<'a>>,
+    ) -> Option<AnimationNodeIndex> {
+        match index.into() {
+            GltfAnimationIndexQuery::Name(v) => self.names.get(v).copied(),
+            GltfAnimationIndexQuery::Number(n) => self.numbers.get(&n).copied(),
+        }
+    }
+
+    /// a simple helper that will allow you to play an animation.
+    /// doing this will run in `PostUpdate`
+    pub fn play<'a>(&mut self, index: impl Into<GltfAnimationIndexQuery<'a>>) {
+        let Some(value) = self.get(index) else {
+            return;
+        };
+        self.animation_to_play = Some(value);
+    }
+}
+
+pub enum GltfAnimationIndexQuery<'a> {
+    Name(&'a str),
+    Number(usize),
+}
+
+impl<'a> From<&'a str> for GltfAnimationIndexQuery<'a> {
+    fn from(value: &'a str) -> Self {
+        Self::Name(value)
+    }
+}
+
+impl From<usize> for GltfAnimationIndexQuery<'_> {
+    fn from(value: usize) -> Self {
+        Self::Number(value)
     }
 }
 
@@ -172,9 +226,7 @@ fn setup_animations(
         return;
     };
 
-    let animations = GltfAnimations::new(gltf);
-
-    let (graph, indices) = AnimationGraph::from_clips(gltf.animations.clone());
+    let (animations, graph) = GltfAnimations::new(gltf, animation_player);
 
     let graph_handle = graphs.add(graph);
 
@@ -182,7 +234,21 @@ fn setup_animations(
         .entity(animation_player)
         .insert(AnimationGraphHandle(graph_handle));
 
-    // commands
-    //     .entity(animation_player)
-    //     .insert(AnimationPlayerOf(animation_ancestor));
+    commands.entity(scene_root).insert(animations);
+}
+
+fn play_requested_animations(
+    mut animations: Query<&mut GltfAnimations>,
+    mut players: Query<&mut AnimationPlayer>,
+) {
+    for mut animation in &mut animations {
+        let Some(index) = animation.animation_to_play.take() else {
+            continue;
+        };
+        info!("Now playing {index:?}");
+        let mut player = players.get_mut(animation.animation_player).unwrap();
+
+        player.stop_all();
+        player.play(index);
+    }
 }
