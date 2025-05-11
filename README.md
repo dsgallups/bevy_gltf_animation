@@ -24,7 +24,7 @@ fn main() {
 
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    // spawns a SceneRoot, and GltfAnimations on this component
+    // spawns a SceneRoot and GltfAnimations on this component
     commands.spawn(GltfSceneRoot::new(asset_server.load("human.glb")));
 }
 // once gltf animations have been added, play animation 2.
@@ -41,3 +41,7 @@ fn play_animations(
     }
 }
 ```
+
+## Contributing/Suggestions
+
+This crate does one thing, but I want it to do that thing very well. Please describe your usecase in an issue or PR if you are looking for particular functionality!
