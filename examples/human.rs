@@ -1,10 +1,14 @@
+use std::time::Duration;
+
 use bevy::prelude::*;
-use bevy_gltf_animation::GltfAnimationPlugin;
+use bevy_gltf_animation::prelude::*;
 
 fn main() {
     App::new()
         .add_plugins((DefaultPlugins, GltfAnimationPlugin))
+        .init_resource::<AnimationTimer>()
         .add_systems(Startup, setup)
+        .add_systems(Update, play_animations)
         .run();
 }
 
@@ -23,4 +27,31 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     //human
     commands.spawn((Human, SceneRoot(asset_server.load("human.glb#Scene0"))));
+}
+
+#[derive(Resource)]
+pub struct AnimationTimer(Timer);
+
+impl Default for AnimationTimer {
+    fn default() -> Self {
+        Self(Timer::new(Duration::from_secs(3), TimerMode::Repeating))
+    }
+}
+
+fn play_animations(
+    mut anim_timer: ResMut<AnimationTimer>,
+    time: Res<Time>,
+    humans: Query<&GltfAnimationPlayer, With<Human>>,
+    mut index: Local<usize>,
+) {
+    anim_timer.0.tick(time.delta());
+    if !anim_timer.0.just_finished() {
+        return;
+    }
+
+    for animation_player in humans {
+        //animation_player.play(*index);
+        //todo
+    }
+    *index += 1;
 }
