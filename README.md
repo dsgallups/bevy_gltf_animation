@@ -11,16 +11,12 @@ This crate automatically creates a handler for your animations per scene root ba
 ## Example
 
 ```rust, ignore
-
-use std::time::Duration;
-
 use bevy::prelude::*;
 use bevy_gltf_animation::prelude::*;
 
 fn main() {
     App::new()
         .add_plugins((DefaultPlugins, GltfAnimationPlugin))
-        .init_resource::<AnimationTimer>()
         .add_systems(Startup, setup)
         .add_systems(Update, play_animations)
         .run();
