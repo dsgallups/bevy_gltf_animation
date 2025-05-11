@@ -661,6 +661,7 @@ name = "bevy_gltf_animation"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy_gltf",
 ]
 
 [[package]]
