@@ -5,7 +5,8 @@ use bevy::{asset::LoadedAsset, prelude::*, scene::SceneInstanceReady};
 use crate::DoNotInsertGltfAnimationPlayer;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_observer(add_gltf_animation_player);
+    app.add_observer(add_gltf_animation_player)
+        .add_systems(Update, add_animations);
     //todo
 }
 
@@ -13,24 +14,26 @@ pub(super) fn plugin(app: &mut App) {
 pub struct GltfAnimationPlayer;
 
 #[derive(Component)]
-struct LoadedingGltf(Handle<Gltf>);
+struct LoadingGltf(Handle<Gltf>);
 
 fn add_gltf_animation_player(
     trigger: Trigger<SceneInstanceReady>,
     assets: Res<AssetServer>,
     q_scene_root: Query<&SceneRoot, Without<DoNotInsertGltfAnimationPlayer>>,
     scenes: Res<Assets<Scene>>,
+    gltfs: Res<Assets<Gltf>>,
+    mut commands: Commands,
 ) {
     let scene_entity = trigger.target();
     let Ok(scene_root) = q_scene_root.get(scene_entity) else {
         return;
     };
 
-    let Some(path) = scene_root.0.path() else {
+    let Some(scene_path) = scene_root.0.path() else {
         return;
     };
 
-    let Some(extension) = path.path().extension().and_then(OsStr::to_str) else {
+    let Some(extension) = scene_path.path().extension().and_then(OsStr::to_str) else {
         return;
     };
 
@@ -52,7 +55,11 @@ fn add_gltf_animation_player(
 
     //let label = path.label()
 
-    let animation: Handle<Gltf> = assets.load(path);
+    info!("Path: {:?}", scene_path.path());
+
+    let animation: Handle<Gltf> = assets.load(scene_path.path());
+
+    commands.entity(scene_entity).insert(LoadingGltf(animation));
 
     // Only rotate the immediate children of the scene root. Those correspond to the glTF nodes.
     // let mut iter = q_transform.iter_many_mut(children);
@@ -61,7 +68,19 @@ fn add_gltf_animation_player(
     // }
 }
 
-fn add_animations(gltfs: Res<Assets<Gltf>>) {
+fn add_animations(
+    mut commands: Commands,
+    gltf_handlers: Query<(Entity, &LoadingGltf)>,
+    gltfs: Res<Assets<Gltf>>,
+) {
+    for (entity, handle) in gltf_handlers {
+        let Some(gltf) = gltfs.get(&handle.0) else {
+            info!("can't get gltf yet");
+            continue;
+        };
+        info!("Got gltf!\n{gltf:#?}");
 
-    //todo
+        commands.entity(entity).remove::<LoadingGltf>();
+        //todo
+    }
 }

@@ -26,7 +26,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     ));
 
     //human
-    commands.spawn((Human, SceneRoot(asset_server.load("human.glb#Scene0"))));
+    commands.spawn((Human, GltfSceneRoot::new(asset_server.load("human.glb"))));
 }
 
 #[derive(Resource)]
