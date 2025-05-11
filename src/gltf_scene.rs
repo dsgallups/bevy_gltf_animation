@@ -1,4 +1,4 @@
-use std::iter;
+use std::{collections::HashSet, iter};
 
 use bevy::{platform::collections::HashMap, prelude::*, scene::SceneInstanceReady};
 
@@ -32,8 +32,62 @@ pub struct IsSetup;
 
 #[derive(Component)]
 pub struct GltfAnimations {
-    unnamed: Vec<Handle<AnimationClip>>,
-    named_animations: HashMap<Box<str>, Handle<AnimationClip>>,
+    numbers: HashMap<usize, AnimationNodeIndex>,
+    names: HashMap<String, AnimationNodeIndex>,
+}
+
+impl GltfAnimations {
+    fn new(gltf: &Gltf) -> (Self, AnimationGraph) {
+        let mut map = HashMap::new();
+
+        //we're going to reverse this
+        for (name, animation) in &gltf.named_animations {
+            map.insert(animation.clone(), name.to_string());
+        }
+
+        let mut unique_handles = Vec::new();
+        for clip in &gltf.animations {
+            // remove all names
+            let name = map.remove(clip);
+
+            let Some(ext) = clip.path().and_then(|p| p.label()) else {
+                error!("No path or label for clip {:?}", clip.id());
+                continue;
+            };
+            let Some(animation_no) = ext
+                .strip_prefix("Animation")
+                .and_then(|index| index.parse::<usize>().ok())
+            else {
+                error!("Couldn't parse the animation number for the {ext}");
+                continue;
+            };
+
+            unique_handles.push((clip.clone(), name, animation_no));
+        }
+
+        //idk if this is true
+        debug_assert!(map.is_empty());
+        let mut animation_graph = AnimationGraph::new();
+
+        let mut number_map = HashMap::new();
+        let mut named_map = HashMap::new();
+
+        for (handle, name, number) in unique_handles {
+            let node_index = animation_graph.add_clip(handle, 1.0, animation_graph.root);
+
+            number_map.insert(number, node_index);
+            if let Some(name) = name {
+                named_map.insert(name, node_index);
+            }
+        }
+
+        let animations = Self {
+            numbers: number_map,
+            names: named_map,
+        };
+
+        (animations, animation_graph)
+    }
 }
 
 fn load_scene(
@@ -118,6 +172,8 @@ fn setup_animations(
         return;
     };
 
+    let animations = GltfAnimations::new(gltf);
+
     let (graph, indices) = AnimationGraph::from_clips(gltf.animations.clone());
 
     let graph_handle = graphs.add(graph);
@@ -129,44 +185,4 @@ fn setup_animations(
     // commands
     //     .entity(animation_player)
     //     .insert(AnimationPlayerOf(animation_ancestor));
-}
-
-fn setup_animations_idea(
-    trigger: Trigger<OnAdd, AnimationPlayers>,
-    q_anim_players: Query<&AnimationPlayers>,
-    mut commands: Commands,
-    mut graphs: ResMut<Assets<AnimationGraph>>,
-) {
-    info!("Setting up animations!");
-    let anim_players = q_anim_players.get(trigger.target()).unwrap();
-    for anim_player in anim_players.iter() {
-        info!("animation player");
-        // let (graph, indices) = AnimationGraph::from_clips([
-        //     assets.get(HumanAnimation::Idle),
-        //     assets.get(HumanAnimation::RunForward),
-        //     assets.get(HumanAnimation::RunBackward),
-        //     assets.get(HumanAnimation::StrafeLeft),
-        //     assets.get(HumanAnimation::StrafeRight),
-        //     assets.get(HumanAnimation::Other(ROLL_FORWARD)),
-        // ]);
-        // let [idle, forward, backward, left, right, roll_foward] = indices.as_slice() else {
-        //     unreachable!()
-        // };
-        // let graph_handle = graphs.add(graph);
-
-        // let animations = MordeAnimations {
-        //     idle: *idle,
-        //     forward: *forward,
-        //     backward: *backward,
-        //     left: *left,
-        //     right: *right,
-        //     falling: *roll_foward,
-        // };
-        // let transitions = AnimationTransitions::new();
-        // commands.entity(anim_player).insert((
-        //     animations,
-        //     AnimationGraphHandle(graph_handle),
-        //     transitions,
-        // ));
-    }
 }
