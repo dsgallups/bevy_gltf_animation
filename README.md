@@ -42,6 +42,36 @@ fn play_animations(
 }
 ```
 
+With the `extended` feature
+
+```rust, ignore
+use bevy::prelude::*;
+use bevy_gltf_animation::prelude::*;
+
+fn main() {
+    App::new()
+        .add_plugins((DefaultPlugins, GltfAnimationPlugin))
+        .add_systems(Startup, setup)
+        .add_systems(Update, play_animations)
+        .run();
+}
+
+
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+    // spawns a SceneRoot and GltfAnimations on this component
+    commands.spawn(GltfSceneRoot::new(asset_server.load("human.glb")));
+}
+
+
+fn play_animations(
+    animations: Query<&mut GltfAnimations, Added<GltfAnimations>>,
+) {
+    for mut animation_player in humans {
+        animation_player.play(2);
+    }
+}
+```
+
 ## Contributing/Suggestions
 
 This crate does one thing, but I want it to do that thing very well. Please describe your usecase in an issue or PR if you are looking for particular functionality!
