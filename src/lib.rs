@@ -37,6 +37,7 @@ fn load_scene(
 ) {
     for (entity, scene, dont_insert_animation_player) in gltf_scenes {
         let Some(gltf) = gltfs.get(&scene.handle) else {
+            debug!("gltf not ready!");
             continue;
         };
 
