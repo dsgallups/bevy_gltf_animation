@@ -94,9 +94,13 @@ fn setup_animations(
 
     let graph_handle = graphs.add(graph);
 
-    commands
-        .entity(animation_player)
-        .insert(AnimationGraphHandle(graph_handle));
+    let mut animation_player_commands = commands.entity(animation_player);
+
+    animation_player_commands.insert(AnimationGraphHandle(graph_handle));
+
+    if gltf_scene_root.use_animation_transitions {
+        animation_player_commands.insert(AnimationTransitions::new());
+    }
 
     commands.entity(scene_root).insert(animations);
 }
