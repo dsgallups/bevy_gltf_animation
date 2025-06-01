@@ -22,7 +22,7 @@ bevy = { version = "0.16", default-features = false, features = [
     "bevy_gltf",
     "bevy_animation",
 ] }
-bevy_gltf = { version = "0.16.0", features = ["bevy_animation"] }
+bevy_gltf = { version = "0.16", features = ["bevy_animation"] }
 
 [dev-dependencies]
 bevy = "0.16"
