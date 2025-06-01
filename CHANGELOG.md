@@ -1,4 +1,4 @@
-## 0.2.0
+## v0.2.0
 ### Features
 - Added new `GltfSceneHandle::use_animation_transitions` to spawn
   an `AnimationTransition` component alongside your `AnimationPlayer`
