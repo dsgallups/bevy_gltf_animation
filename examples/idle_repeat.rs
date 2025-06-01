@@ -38,5 +38,5 @@ fn idle(
     let mut player = players.get_mut(gltf_animations.animation_player).unwrap();
     let idle_animation = gltf_animations.get_by_name("Idle_Loop").unwrap();
     player.stop_all();
-    player.play(idle_animation);
+    player.play(idle_animation).repeat();
 }
