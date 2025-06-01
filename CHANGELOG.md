@@ -9,3 +9,4 @@
 
 ### Chores
 - Updated `bevy_gltf` to respect minor bevy version
+- Added `transitions` example
