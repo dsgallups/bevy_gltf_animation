@@ -1,6 +1,6 @@
 [package]
 name = "bevy_gltf_animation"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["dsgallups <dsgallups@protonmail.com>"]
 edition = "2024"
 license = "MIT OR Apache-2.0"
@@ -22,7 +22,7 @@ bevy = { version = "0.16", default-features = false, features = [
     "bevy_gltf",
     "bevy_animation",
 ] }
-bevy_gltf = { version = "0.16.0", features = ["bevy_animation"] }
+bevy_gltf = { version = "0.16", features = ["bevy_animation"] }
 
 [dev-dependencies]
 bevy = "0.16"

@@ -5,6 +5,7 @@ pub struct GltfSceneRoot {
     pub handle: Handle<Gltf>,
     /// Which scene to display
     pub use_scene: usize,
+    pub use_animation_transitions: bool,
 }
 
 impl GltfSceneRoot {
@@ -12,10 +13,15 @@ impl GltfSceneRoot {
         Self {
             handle,
             use_scene: 0,
+            use_animation_transitions: false,
         }
     }
     pub fn with_scene(mut self, scene_number: usize) -> Self {
         self.use_scene = scene_number;
+        self
+    }
+    pub fn use_animation_transitions(mut self) -> Self {
+        self.use_animation_transitions = true;
         self
     }
 }
