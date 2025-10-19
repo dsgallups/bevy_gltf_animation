@@ -1,3 +1,7 @@
+## v0.3.0
+### Adjustments
+- Updated to `bevy@0.17`
+
 ## v0.2.0
 ### Features
 - Added new `GltfSceneHandle::use_animation_transitions` to spawn
