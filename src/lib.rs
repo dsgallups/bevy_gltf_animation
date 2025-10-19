@@ -59,7 +59,7 @@ fn load_scene(
 }
 
 fn setup_animations(
-    trigger: Trigger<SceneInstanceReady>,
+    ev: On<SceneInstanceReady>,
     mut commands: Commands,
     parents: Query<&ChildOf>,
     children: Query<&Children>,
@@ -68,7 +68,7 @@ fn setup_animations(
     gltfs: Res<Assets<Gltf>>,
     mut graphs: ResMut<Assets<AnimationGraph>>,
 ) {
-    let target = trigger.target();
+    let target = ev.event_target();
     let Some(animation_player) = children
         .iter_descendants(target)
         .find(|child| animation_players.get(*child).is_ok())

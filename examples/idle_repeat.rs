@@ -28,11 +28,11 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn idle(
-    trigger: Trigger<OnAdd, GltfAnimations>,
+    ev: On<Add, GltfAnimations>,
     mut humans: Query<&mut GltfAnimations>,
     mut players: Query<&mut AnimationPlayer>,
 ) {
-    let Ok(mut gltf_animations) = humans.get_mut(trigger.target()) else {
+    let Ok(mut gltf_animations) = humans.get_mut(ev.event_target()) else {
         return;
     };
     let mut player = players.get_mut(gltf_animations.animation_player).unwrap();
